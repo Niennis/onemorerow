@@ -35,4 +35,34 @@ describe("SideClock", () => {
     await user.click(screen.getByRole("button", { name: "Reloj on/off" }));
     expect(localStorage.getItem("onemorerow-side-clock-visible")).toBe("false");
   });
+
+  it("disables the reset button when there are no pokemons", () => {
+    render(<SideClock pokemonCount={0} onResetPokemons={vi.fn()} />);
+    expect(screen.getByRole("button", { name: "Resetear monitos" })).toBeDisabled();
+  });
+
+  it("asks for confirmation and calls onResetPokemons when confirmed", async () => {
+    const user = userEvent.setup();
+    const onResetPokemons = vi.fn();
+    vi.spyOn(window, "confirm").mockReturnValue(true);
+    render(<SideClock pokemonCount={3} onResetPokemons={onResetPokemons} />);
+
+    await user.click(screen.getByRole("button", { name: "Resetear monitos" }));
+
+    expect(window.confirm).toHaveBeenCalled();
+    expect(onResetPokemons).toHaveBeenCalledTimes(1);
+    window.confirm.mockRestore();
+  });
+
+  it("does not reset when the confirmation is declined", async () => {
+    const user = userEvent.setup();
+    const onResetPokemons = vi.fn();
+    vi.spyOn(window, "confirm").mockReturnValue(false);
+    render(<SideClock pokemonCount={3} onResetPokemons={onResetPokemons} />);
+
+    await user.click(screen.getByRole("button", { name: "Resetear monitos" }));
+
+    expect(onResetPokemons).not.toHaveBeenCalled();
+    window.confirm.mockRestore();
+  });
 });

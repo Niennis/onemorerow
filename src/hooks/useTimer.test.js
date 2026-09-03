@@ -144,6 +144,39 @@ describe("useTimer", () => {
     expect(result.current.cycleIndex).toBe(0); // dots reset after the long break
   });
 
+  it("bumps completedCycles only when the long break itself finishes", () => {
+    const { result } = renderHook(() => useTimer(fastSettings));
+    expect(result.current.completedCycles).toBe(0);
+
+    for (let cycle = 1; cycle <= 3; cycle += 1) {
+      act(() => result.current.start()); // work
+      act(() => vi.advanceTimersByTime(3000));
+      act(() => result.current.start()); // short break
+      act(() => vi.advanceTimersByTime(2000));
+      expect(result.current.completedCycles).toBe(0); // short breaks don't count
+    }
+
+    act(() => result.current.start()); // 4th work session
+    act(() => vi.advanceTimersByTime(3000));
+    expect(result.current.mode).toBe("long");
+    expect(result.current.completedCycles).toBe(0);
+
+    act(() => result.current.start()); // long break
+    act(() => vi.advanceTimersByTime(4000));
+    expect(result.current.completedCycles).toBe(1);
+  });
+
+  it("counts a skipped long break the same as a naturally finished one", () => {
+    const { result } = renderHook(() => useTimer(fastSettings));
+    for (let cycle = 1; cycle <= 4; cycle += 1) {
+      act(() => result.current.start());
+      act(() => result.current.skip()); // work -> break
+      act(() => result.current.start());
+      act(() => result.current.skip()); // break -> next work (or long break's start)
+    }
+    expect(result.current.completedCycles).toBe(1);
+  });
+
   it("skip silently forces the same transition without playing a sound", () => {
     const { result } = renderHook(() => useTimer(fastSettings));
     act(() => result.current.start());

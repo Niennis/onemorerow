@@ -39,7 +39,7 @@ function formatTime(date) {
   return `${pad(date.getHours())}:${pad(date.getMinutes())}:${pad(date.getSeconds())}`;
 }
 
-export default function SideClock() {
+export default function SideClock({ pokemonCount = 0, onResetPokemons }) {
   const [visible, setVisible] = useState(readVisible);
   const [now, setNow] = useState(() => new Date());
 
@@ -56,22 +56,44 @@ export default function SideClock() {
     }
   }, [visible]);
 
+  const handleReset = () => {
+    if (pokemonCount === 0) return;
+    if (window.confirm("¿Quieres eliminar todos los monitos guardados? Esta acción no se puede deshacer.")) {
+      onResetPokemons?.();
+    }
+  };
+
   return (
     <>
       {/* Flush against the screen edge, independent of the clock's own
           position so it never drifts when the clock is toggled. */}
-      <button
-        type="button"
-        onClick={() => setVisible((v) => !v)}
-        aria-pressed={visible}
-        aria-label="Reloj on/off"
-        className="group fixed left-0 top-1/2 z-20 hidden -translate-y-1/2 items-center gap-2 rounded-r-full border border-l-0 border-[var(--tone-housing-border)] bg-[var(--tone-housing-bg)] py-3 pl-2 pr-2 text-[var(--tone-text)] opacity-40 backdrop-blur-xl transition-all duration-300 hover:pr-4 hover:opacity-100 md:flex"
-      >
-        <span aria-hidden>🕐</span>
-        <span className="max-w-0 overflow-hidden whitespace-nowrap text-xs font-medium tracking-wide opacity-0 transition-all duration-300 group-hover:max-w-[7rem] group-hover:opacity-100">
-          Reloj {visible ? "on" : "off"}
-        </span>
-      </button>
+      <div className="fixed left-0 top-1/2 z-20 hidden -translate-y-1/2 flex-col gap-2 md:flex">
+        <button
+          type="button"
+          onClick={() => setVisible((v) => !v)}
+          aria-pressed={visible}
+          aria-label="Reloj on/off"
+          className="group flex items-center gap-2 rounded-r-full border border-l-0 border-[var(--tone-housing-border)] bg-[var(--tone-housing-bg)] py-3 pl-2 pr-2 text-[var(--tone-text)] opacity-40 backdrop-blur-xl transition-all duration-300 hover:pr-4 hover:opacity-100"
+        >
+          <span aria-hidden>🕐</span>
+          <span className="max-w-0 overflow-hidden whitespace-nowrap text-xs font-medium tracking-wide opacity-0 transition-all duration-300 group-hover:max-w-[7rem] group-hover:opacity-100">
+            Reloj {visible ? "on" : "off"}
+          </span>
+        </button>
+
+        <button
+          type="button"
+          onClick={handleReset}
+          disabled={pokemonCount === 0}
+          aria-label="Resetear monitos"
+          className="group flex items-center gap-2 rounded-r-full border border-l-0 border-[var(--tone-housing-border)] bg-[var(--tone-housing-bg)] py-3 pl-2 pr-2 text-[var(--tone-text)] opacity-40 backdrop-blur-xl transition-all duration-300 hover:pr-4 hover:opacity-100 disabled:pointer-events-none disabled:opacity-20"
+        >
+          <span aria-hidden>🔄</span>
+          <span className="max-w-0 overflow-hidden whitespace-nowrap text-xs font-medium tracking-wide opacity-0 transition-all duration-300 group-hover:max-w-[9rem] group-hover:opacity-100">
+            Resetear monitos
+          </span>
+        </button>
+      </div>
 
       {/* Centered on the exact center of the left third of the viewport
           (16.667vw, 50vh), regardless of the edge-pinned toggle button. */}

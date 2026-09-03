@@ -78,6 +78,43 @@ create trigger trg_on_auth_user_created
   for each row execute function public.handle_new_user();
 
 -- ============================================================
+-- 1b. user_pokemon: one row per collected sprite, many per user.
+--     A new row is added client-side each time a full focus/break
+--     cycle finishes; pos_x/pos_y update as the user drags it around.
+-- ============================================================
+
+create table if not exists public.user_pokemon (
+  id uuid primary key default gen_random_uuid(),
+  user_id uuid not null references auth.users (id) on delete cascade,
+  pokemon_id integer not null check (pokemon_id between 1 and 2000),
+  name text not null,
+  sprite_url text not null,
+  pos_x real not null default 0.5 check (pos_x between 0 and 1),
+  pos_y real not null default 0.5 check (pos_y between 0 and 1),
+  created_at timestamptz not null default now()
+);
+
+create index if not exists idx_user_pokemon_user_id on public.user_pokemon (user_id);
+
+alter table public.user_pokemon enable row level security;
+
+drop policy if exists "select own pokemon" on public.user_pokemon;
+create policy "select own pokemon" on public.user_pokemon
+  for select using (auth.uid() = user_id);
+
+drop policy if exists "insert own pokemon" on public.user_pokemon;
+create policy "insert own pokemon" on public.user_pokemon
+  for insert with check (auth.uid() = user_id);
+
+drop policy if exists "update own pokemon" on public.user_pokemon;
+create policy "update own pokemon" on public.user_pokemon
+  for update using (auth.uid() = user_id);
+
+drop policy if exists "delete own pokemon" on public.user_pokemon;
+create policy "delete own pokemon" on public.user_pokemon
+  for delete using (auth.uid() = user_id);
+
+-- ============================================================
 -- 2. Storage: per-user uploaded background images, with limits
 --    Folder layout inside the bucket: {user_id}/{filename}
 -- ============================================================

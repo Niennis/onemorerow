@@ -24,6 +24,7 @@ function initState(settings) {
     workStarted: false, // has the CURRENT work phase already painted its dot?
     pendingAlarm: null, // "focus" | "break" | null — consumed by the alarm effect
     transitionId: 0, // bumped on every phase change, so the alarm effect can react
+    completedCycles: 0, // bumped each time a long break finishes (4 work+break rounds)
   };
 }
 
@@ -72,6 +73,7 @@ function reducer(state, action) {
       const finishedMode = state.mode;
       return {
         ...completePhase(state, action.settings),
+        completedCycles: state.completedCycles + (finishedMode === "long" ? 1 : 0),
         pendingAlarm: finishedMode === "work" ? "focus" : "break",
         transitionId: state.transitionId + 1,
       };
@@ -79,6 +81,7 @@ function reducer(state, action) {
     case "SKIP":
       return {
         ...completePhase(state, action.settings),
+        completedCycles: state.completedCycles + (state.mode === "long" ? 1 : 0),
         pendingAlarm: null, // a manual skip doesn't need a notification sound
         transitionId: state.transitionId + 1,
       };
@@ -158,5 +161,6 @@ export function useTimer(settings) {
     reset,
     skip,
     cycleIndex: state.cycleIndex,
+    completedCycles: state.completedCycles,
   };
 }

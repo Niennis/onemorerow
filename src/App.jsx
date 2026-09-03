@@ -1,13 +1,15 @@
-import { useMemo } from "react";
+import { useEffect, useMemo, useRef } from "react";
 import { useAuth } from "./hooks/useAuth";
 import { useSettings } from "./hooks/useSettings";
 import { useTimer } from "./hooks/useTimer";
 import { useBackgroundTone } from "./hooks/useBackgroundTone";
+import { usePokemonCollection } from "./hooks/usePokemonCollection";
 import { cssVarsForTone } from "./lib/theme";
 import Timer from "./components/Timer";
 import AuthPanel from "./components/AuthPanel";
 import MenuDropdown from "./components/MenuDropdown";
 import SideClock from "./components/SideClock";
+import PokemonLayer from "./components/PokemonLayer";
 
 function backgroundStyle(settings) {
   if (settings.backgroundType === "gradient") {
@@ -28,6 +30,16 @@ export default function App() {
   const { settings, updateSettings, syncError } = useSettings(auth.user);
   const timer = useTimer(settings);
   const tone = useBackgroundTone(settings);
+  const { pokemons, addRandom, updatePosition, resetAll } = usePokemonCollection(auth.user);
+
+  // A full cycle (4x focus+break) just wrapped up: drop a new random sprite.
+  const completedCyclesRef = useRef(timer.completedCycles);
+  useEffect(() => {
+    if (timer.completedCycles > completedCyclesRef.current) {
+      addRandom();
+    }
+    completedCyclesRef.current = timer.completedCycles;
+  }, [timer.completedCycles, addRandom]);
 
   const style = useMemo(
     () => ({ ...backgroundStyle(settings), ...cssVarsForTone(tone) }),
@@ -36,7 +48,8 @@ export default function App() {
 
   return (
     <div style={style} className="flex min-h-screen flex-col transition-colors duration-500">
-      <SideClock />
+      <SideClock pokemonCount={pokemons.length} onResetPokemons={resetAll} />
+      <PokemonLayer pokemons={pokemons} onDragEnd={updatePosition} />
 
       <header className="flex items-center justify-end gap-3 p-4">
         <AuthPanel auth={auth} syncError={syncError} />
