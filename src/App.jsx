@@ -7,6 +7,7 @@ import { cssVarsForTone } from "./lib/theme";
 import Timer from "./components/Timer";
 import AuthPanel from "./components/AuthPanel";
 import MenuDropdown from "./components/MenuDropdown";
+import SideClock from "./components/SideClock";
 
 function backgroundStyle(settings) {
   if (settings.backgroundType === "gradient") {
@@ -35,6 +36,8 @@ export default function App() {
 
   return (
     <div style={style} className="flex min-h-screen flex-col transition-colors duration-500">
+      <SideClock />
+
       <header className="flex items-center justify-end gap-3 p-4">
         <AuthPanel auth={auth} syncError={syncError} />
         <MenuDropdown settings={settings} onChange={updateSettings} user={auth.user} />
